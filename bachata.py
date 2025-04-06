@@ -5,15 +5,14 @@ import os
 import glob
 import re
 
-st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
-
 # ⚙️ Paramètres de l'app
 MAX_MOVES = 62
 MOVES_PER_PICK = 3
 
-
-
-# Liste de mots interdits (à personnaliser si besoin)
+# 📦 Utilisateur actuel (entrée en haut de page)
+st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
+st.markdown("## 💃 Bachata Moves Picker")
+username = st.text_input("Entre ton prénom ou pseudo :", key="user_input")
 BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste","zaml"]
 
 # Nettoyage du nom
@@ -28,12 +27,6 @@ if any(bad_word in username for bad_word in BANNED_WORDS):
 if not re.match(r"^[a-zA-Z0-9_\-]{2,20}$", username):
     st.warning("⛔ Ton pseudo doit faire 2 à 20 caractères valides (lettres, chiffres, _ ou -).")
     st.stop()
-
-# 📦 Utilisateur actuel (entrée en haut de page)
-
-st.markdown("## 💃 Bachata Moves Picker")
-username = st.text_input("Entre ton prénom ou pseudo :", key="user_input")
-
 # Ne rien afficher tant qu’un nom n’est pas entré
 if not username:
     st.warning("➡️ Entrez votre nom ci-dessus pour commencer.")

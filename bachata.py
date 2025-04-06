@@ -3,10 +3,29 @@ import random
 import json
 import os
 import glob
+import re
 
 # ⚙️ Paramètres de l'app
 MAX_MOVES = 62
 MOVES_PER_PICK = 3
+
+
+
+# Liste de mots interdits (à personnaliser si besoin)
+BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste","zaml"]
+
+# Nettoyage du nom
+username = st.text_input("Entre ton prénom ou pseudo :").strip().lower()
+
+# Vérification du pseudo
+if any(bad_word in username for bad_word in BANNED_WORDS):
+    st.error("⛔ Pseudo inapproprié. Merci de rester respectueux.")
+    st.stop()
+
+# Filtrage des caractères spéciaux
+if not re.match(r"^[a-zA-Z0-9_\-]{2,20}$", username):
+    st.warning("⛔ Ton pseudo doit faire 2 à 20 caractères valides (lettres, chiffres, _ ou -).")
+    st.stop()
 
 # 📦 Utilisateur actuel (entrée en haut de page)
 st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
@@ -84,3 +103,26 @@ with st.expander("📋 Moves restants", expanded=True):
 with st.expander("🧠 Moves déjà pratiqués", expanded=True):
     st.write(f"**{len(st.session_state.used)} moves**")
     st.code(", ".join(str(n) for n in sorted(st.session_state.used)) or "Aucun")
+
+st.markdown("---")
+
+with st.expander("👮 Interface Admin"):
+    admin_password = st.text_input("Mot de passe admin :", type="password")
+
+    if admin_password == "bachata42":  # Tu peux changer ce mot de passe
+        st.success("Accès admin validé ✅")
+
+        user_files = glob.glob("moves_*.json")
+        usernames = [f.replace("moves_", "").replace(".json", "") for f in user_files]
+
+        st.write(f"Utilisateurs enregistrés : {len(usernames)}")
+        selected_user = st.selectbox("Sélectionner un utilisateur à supprimer", usernames)
+
+        if st.button("❌ Supprimer ce fichier utilisateur"):
+            try:
+                os.remove(f"moves_{selected_user}.json")
+                st.success(f"Fichier de {selected_user} supprimé.")
+            except Exception as e:
+                st.error(f"Erreur lors de la suppression : {e}")
+    elif admin_password != "":
+        st.error("Mot de passe incorrect.")

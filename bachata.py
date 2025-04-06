@@ -5,6 +5,8 @@ import os
 import glob
 import re
 
+st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
+
 # ⚙️ Paramètres de l'app
 MAX_MOVES = 62
 MOVES_PER_PICK = 3
@@ -28,7 +30,7 @@ if not re.match(r"^[a-zA-Z0-9_\-]{2,20}$", username):
     st.stop()
 
 # 📦 Utilisateur actuel (entrée en haut de page)
-st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
+
 st.markdown("## 💃 Bachata Moves Picker")
 username = st.text_input("Entre ton prénom ou pseudo :", key="user_input")
 

@@ -102,9 +102,10 @@ with st.expander("🧠 Moves déjà pratiqués", expanded=True):
 st.markdown("---")
 
 with st.expander("👮 Interface Admin"):
-    admin_password = st.text_input("Mot de passe admin :", type="password")
+    input_password = st.text_input("Mot de passe admin :", type="password")
 
-    if admin_password == "bachata42":  # Tu peux changer ce mot de passe
+    # ✅ Comparaison avec le mot de passe stocké dans les secrets
+    if "general" in st.secrets and input_password == st.secrets["general"]["admin_password"]:
         st.success("Accès admin validé ✅")
 
         user_files = glob.glob("moves_*.json")
@@ -119,5 +120,5 @@ with st.expander("👮 Interface Admin"):
                 st.success(f"Fichier de {selected_user} supprimé.")
             except Exception as e:
                 st.error(f"Erreur lors de la suppression : {e}")
-    elif admin_password != "":
+    elif input_password != "":
         st.error("Mot de passe incorrect.")

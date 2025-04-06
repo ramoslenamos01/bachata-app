@@ -12,7 +12,7 @@ MOVES_PER_PICK = 3
 # 📦 Utilisateur actuel (entrée en haut de page)
 st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
 st.markdown("## 💃 Bachata Moves Picker")
-username = st.text_input("Entre ton prénom ou pseudo :", key="user_input")
+
 BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste","zaml"]
 
 # Nettoyage du nom

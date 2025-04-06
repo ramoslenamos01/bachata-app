@@ -16,7 +16,7 @@ st.markdown("## 💃 Bachata Moves Picker")
 BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste","zaml"]
 
 # Nettoyage du nom
-username = st.text_input("Entre ton prénom ou pseudo :").strip().lower()
+username = st.text_input("Entre ton prénom :").strip().lower()
 
 # Vérification du pseudo
 if any(bad_word in username for bad_word in BANNED_WORDS):

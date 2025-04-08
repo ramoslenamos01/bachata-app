@@ -60,12 +60,18 @@ def save_github_file(data, sha=None):
         "branch": BRANCH
     }
 
-    # ⚠️ N'ajoute 'sha' que s'il existe vraiment
     if sha:
         payload["sha"] = sha
 
     response = requests.put(url, headers=headers, json=payload)
-    return response.status_code in [200, 201]
+
+    # Afficher clairement l'erreur s'il y en a une
+    if response.status_code not in [200, 201]:
+        st.error(f"Erreur GitHub ({response.status_code}) : {response.json().get('message', response.text)}")
+        return False
+
+    return True
+
 
 # Load from GitHub
 if "remaining" not in st.session_state or st.session_state.get("user") != username:

@@ -57,13 +57,15 @@ def save_github_file(data, sha=None):
     payload = {
         "message": commit_message,
         "content": encoded_data,
-        "branch": BRANCH,
-        "sha": sha
+        "branch": BRANCH
     }
 
-    response = requests.put(url, headers=headers, json=payload)
-    return response.status_code == 200 or response.status_code == 201
+    # ⚠️ N'ajoute 'sha' que s'il existe vraiment
+    if sha:
+        payload["sha"] = sha
 
+    response = requests.put(url, headers=headers, json=payload)
+    return response.status_code in [200, 201]
 
 # Load from GitHub
 if "remaining" not in st.session_state or st.session_state.get("user") != username:

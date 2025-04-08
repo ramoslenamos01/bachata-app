@@ -114,53 +114,32 @@ with col2:
         else:
             st.error("Erreur lors de la réinitialisation sur GitHub.")
 
-# Gestion manuelle
+# Gestion manuelle des moves utilisés
 st.markdown("---")
-st.markdown("### 🛠️ Gestion manuelle")
-num_to_add = st.text_input("Ajouter un numéro ou une vidéo (Instagram)")
-if st.button("➕ Ajouter"):
-    if num_to_add.isdigit():
-        num = int(num_to_add)
-        if num not in st.session_state.remaining:
-            st.session_state.remaining.append(num)
-            st.success(f"Numéro {num} ajouté aux moves restants.")
+st.markdown("### 🛠️ Gestion manuelle des moves utilisés")
+num_to_add_used = st.text_input("Ajouter un numéro aux moves utilisés")
+if st.button("➕ Ajouter aux utilisés"):
+    if num_to_add_used.isdigit():
+        num = int(num_to_add_used)
+        if num not in st.session_state.used:
+            st.session_state.used.append(num)
+            if num in st.session_state.remaining:
+                st.session_state.remaining.remove(num)
+            st.success(f"Numéro {num} ajouté aux moves utilisés.")
         else:
-            st.warning(f"Le numéro {num} existe déjà.")
-    else:
-        if num_to_add not in st.session_state.custom:
-            st.session_state.custom.append(num_to_add)
-            st.success("Lien Instagram ajouté aux moves personnalisés.")
-        else:
-            st.warning("Lien déjà ajouté.")
-    success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
-    if success:
-        st.session_state.sha = new_sha
+            st.warning(f"Le numéro {num} est déjà dans les moves utilisés.")
+        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+        if success:
+            st.session_state.sha = new_sha
 
-num_to_remove = st.text_input("Supprimer un numéro")
-if st.button("➖ Supprimer"):
-    if num_to_remove.isdigit() and int(num_to_remove) in st.session_state.remaining:
-        st.session_state.remaining.remove(int(num_to_remove))
-        st.success(f"Numéro {num_to_remove} supprimé.")
+num_to_remove_used = st.text_input("Supprimer un numéro des moves utilisés")
+if st.button("➖ Supprimer des utilisés"):
+    if num_to_remove_used.isdigit() and int(num_to_remove_used) in st.session_state.used:
+        st.session_state.used.remove(int(num_to_remove_used))
+        st.session_state.remaining.append(int(num_to_remove_used))
+        st.success(f"Numéro {num_to_remove_used} supprimé des moves utilisés.")
         success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
         if success:
             st.session_state.sha = new_sha
     else:
-        st.error("Numéro non trouvé dans la liste principale.")
-
-# Affichage complet des listes
-st.markdown("---")
-
-with st.expander("📋 Moves restants (Liste principale)", expanded=True):
-    st.write(f"**{len(st.session_state.remaining)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.remaining)))
-
-with st.expander("🧠 Moves déjà pratiqués", expanded=True):
-    st.write(f"**{len(st.session_state.used)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.used)))
-
-with st.expander("📸 Moves personnalisés (Instagram)", expanded=True):
-    if st.session_state.custom:
-        st.write(f"**{len(st.session_state.custom)} vidéos ajoutées**")
-        st.code("\n".join(st.session_state.custom))
-    else:
-        st.info("Aucune vidéo personnalisée ajoutée.")
+        st.error("Numéro non trouvé dans les moves utilisés.")

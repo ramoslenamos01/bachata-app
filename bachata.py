@@ -45,7 +45,7 @@ def load_github_file():
         data = json.loads(base64.b64decode(content["content"]).decode())
         return data, content["sha"]
     else:
-        return {"remaining": list(range(1, MAX_MOVES + 1)), "used": []}, None
+        return {"remaining": list(range(1, MAX_MOVES + 1)), "used": [], "custom": []}, None
 
 
 def save_github_file(data, sha=None):
@@ -80,6 +80,7 @@ if "remaining" not in st.session_state or st.session_state.get("user") != userna
     data, sha = load_github_file()
     st.session_state.remaining = data["remaining"]
     st.session_state.used = data["used"]
+    st.session_state.custom = data.get("custom", [])
     st.session_state.sha = sha
     st.session_state.user = username
 
@@ -94,7 +95,7 @@ with col1:
             for num in selected:
                 st.session_state.remaining.remove(num)
                 st.session_state.used.append(num)
-            success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used}, st.session_state.sha)
+            success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
             if success:
                 st.session_state.sha = new_sha
                 st.success(f"Moves à pratiquer : {sorted(selected)}")
@@ -105,18 +106,39 @@ with col2:
     if st.button("🔄 Réinitialiser", use_container_width=True):
         st.session_state.remaining = list(range(1, MAX_MOVES + 1))
         st.session_state.used = []
-        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": []}, st.session_state.sha)
+        st.session_state.custom = []
+        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": [], "custom": []}, st.session_state.sha)
         if success:
             st.session_state.sha = new_sha
             st.info("Liste réinitialisée pour " + username)
         else:
             st.error("Erreur lors de la réinitialisation sur GitHub.")
 
-# Affichage restants et utilisés
-with st.expander("📋 Moves restants", expanded=True):
-    st.write(f"**{len(st.session_state.remaining)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.remaining)))
+# Ajout et suppression manuels
+st.markdown("---")
+st.markdown("### 🛠️ Gestion manuelle")
+num_to_add = st.text_input("Ajouter un numéro ou une vidéo (Instagram)")
+if st.button("➕ Ajouter"):
+    if num_to_add.isdigit():
+        num = int(num_to_add)
+        if num not in st.session_state.remaining:
+            st.session_state.remaining.append(num)
+            st.success(f"Numéro {num} ajouté aux moves restants.")
+        else:
+            st.warning(f"Le numéro {num} existe déjà.")
+    else:
+        if num_to_add not in st.session_state.custom:
+            st.session_state.custom.append(num_to_add)
+            st.success("Lien Instagram ajouté aux moves personnalisés.")
+        else:
+            st.warning("Lien déjà ajouté.")
+    save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
 
-with st.expander("🧠 Moves déjà pratiqués", expanded=True):
-    st.write(f"**{len(st.session_state.used)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.used)))
+num_to_remove = st.text_input("Supprimer un numéro")
+if st.button("➖ Supprimer"):
+    if num_to_remove.isdigit() and int(num_to_remove) in st.session_state.remaining:
+        st.session_state.remaining.remove(int(num_to_remove))
+        st.success(f"Numéro {num_to_remove} supprimé.")
+        save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+    else:
+        st.error("Numéro non trouvé dans la liste principale.")

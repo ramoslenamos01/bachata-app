@@ -128,11 +128,7 @@ if st.button("➕ Ajouter aux utilisés"):
             if num in st.session_state.remaining:
                 st.session_state.remaining.remove(num)
             st.success(f"Numéro {num} ajouté aux moves utilisés.")
-            success, new_sha = save_github_file({
-                "remaining": st.session_state.remaining,
-                "used": st.session_state.used,
-                "custom": st.session_state.custom
-            }, st.session_state.sha)
+            success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
             if success:
                 st.session_state.sha = new_sha
         else:
@@ -150,14 +146,28 @@ if st.button("➖ Supprimer des utilisés"):
             if num not in st.session_state.remaining:
                 st.session_state.remaining.append(num)
             st.success(f"Numéro {num} supprimé des moves utilisés.")
-            success, new_sha = save_github_file({
-                "remaining": st.session_state.remaining,
-                "used": st.session_state.used,
-                "custom": st.session_state.custom
-            }, st.session_state.sha)
+            success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
             if success:
                 st.session_state.sha = new_sha
         else:
             st.error(f"Le numéro {num} n'est pas dans les moves utilisés.")
     else:
         st.error("Merci d'entrer un numéro valide.")
+
+# Affichage complet des listes
+st.markdown("---")
+
+with st.expander("📋 Moves restants (Liste principale)", expanded=True):
+    st.write(f"**{len(st.session_state.remaining)} moves**")
+    st.code(", ".join(str(n) for n in sorted(st.session_state.remaining)))
+
+with st.expander("🧠 Moves déjà pratiqués", expanded=True):
+    st.write(f"**{len(st.session_state.used)} moves**")
+    st.code(", ".join(str(n) for n in sorted(st.session_state.used)))
+
+with st.expander("📸 Moves personnalisés (Instagram)", expanded=True):
+    if st.session_state.custom:
+        st.write(f"**{len(st.session_state.custom)} vidéos ajoutées**")
+        st.code("\n".join(st.session_state.custom))
+    else:
+        st.info("Aucune vidéo personnalisée ajoutée.")

@@ -65,12 +65,16 @@ def save_github_file(data, sha=None):
 
     response = requests.put(url, headers=headers, json=payload)
 
-    # Afficher clairement l'erreur s'il y en a une
+    # Afficher en permanence la réponse GitHub
+    with st.expander("🛠️ Détails de l'erreur GitHub"):
+        st.write("Statut :", response.status_code)
+        st.write("Réponse :", response.json())
+
     if response.status_code not in [200, 201]:
-        st.error(f"Erreur GitHub ({response.status_code}) : {response.json().get('message', response.text)}")
         return False
 
     return True
+
 
 
 # Load from GitHub

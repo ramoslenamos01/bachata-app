@@ -65,16 +65,14 @@ def save_github_file(data, sha=None):
 
     response = requests.put(url, headers=headers, json=payload)
 
-    # Afficher en permanence la réponse GitHub
-    with st.expander("🛠️ Détails"):
-        st.write("Statut :", response.status_code)
-        st.write("Réponse :", response.json())
-
-    if response.status_code not in [200, 201]:
-        return False
-
-    return True
-
+    if response.status_code in [200, 201]:
+        new_sha = response.json()['content']['sha']
+        return True, new_sha
+    else:
+        with st.expander("🛠️ Détails"):
+            st.write("Statut :", response.status_code)
+            st.write("Réponse :", response.json())
+        return False, None
 
 
 # Load from GitHub
@@ -96,8 +94,9 @@ with col1:
             for num in selected:
                 st.session_state.remaining.remove(num)
                 st.session_state.used.append(num)
-            success = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used}, st.session_state.sha)
+            success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used}, st.session_state.sha)
             if success:
+                st.session_state.sha = new_sha
                 st.success(f"Moves à pratiquer : {sorted(selected)}")
             else:
                 st.error("Erreur lors de la sauvegarde sur GitHub.")
@@ -106,8 +105,9 @@ with col2:
     if st.button("🔄 Réinitialiser", use_container_width=True):
         st.session_state.remaining = list(range(1, MAX_MOVES + 1))
         st.session_state.used = []
-        success = save_github_file({"remaining": st.session_state.remaining, "used": []}, st.session_state.sha)
+        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": []}, st.session_state.sha)
         if success:
+            st.session_state.sha = new_sha
             st.info("Liste réinitialisée pour " + username)
         else:
             st.error("Erreur lors de la réinitialisation sur GitHub.")

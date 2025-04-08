@@ -117,7 +117,9 @@ with col2:
 # Gestion manuelle des moves utilisés
 st.markdown("---")
 st.markdown("### 🛠️ Gestion manuelle des moves utilisés")
-num_to_add_used = st.text_input("Ajouter un numéro aux moves utilisés")
+
+# Ajouter aux utilisés
+num_to_add_used = st.text_input("Ajouter un numéro aux moves utilisés", key="add_used_input")
 if st.button("➕ Ajouter aux utilisés"):
     if num_to_add_used.isdigit():
         num = int(num_to_add_used)
@@ -126,20 +128,36 @@ if st.button("➕ Ajouter aux utilisés"):
             if num in st.session_state.remaining:
                 st.session_state.remaining.remove(num)
             st.success(f"Numéro {num} ajouté aux moves utilisés.")
+            success, new_sha = save_github_file({
+                "remaining": st.session_state.remaining,
+                "used": st.session_state.used,
+                "custom": st.session_state.custom
+            }, st.session_state.sha)
+            if success:
+                st.session_state.sha = new_sha
         else:
             st.warning(f"Le numéro {num} est déjà dans les moves utilisés.")
-        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
-        if success:
-            st.session_state.sha = new_sha
-
-num_to_remove_used = st.text_input("Supprimer un numéro des moves utilisés")
-if st.button("➖ Supprimer des utilisés"):
-    if num_to_remove_used.isdigit() and int(num_to_remove_used) in st.session_state.used:
-        st.session_state.used.remove(int(num_to_remove_used))
-        st.session_state.remaining.append(int(num_to_remove_used))
-        st.success(f"Numéro {num_to_remove_used} supprimé des moves utilisés.")
-        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
-        if success:
-            st.session_state.sha = new_sha
     else:
-        st.error("Numéro non trouvé dans les moves utilisés.")
+        st.error("Merci d'entrer un numéro valide.")
+
+# Supprimer des utilisés
+num_to_remove_used = st.text_input("Supprimer un numéro des moves utilisés", key="remove_used_input")
+if st.button("➖ Supprimer des utilisés"):
+    if num_to_remove_used.isdigit():
+        num = int(num_to_remove_used)
+        if num in st.session_state.used:
+            st.session_state.used.remove(num)
+            if num not in st.session_state.remaining:
+                st.session_state.remaining.append(num)
+            st.success(f"Numéro {num} supprimé des moves utilisés.")
+            success, new_sha = save_github_file({
+                "remaining": st.session_state.remaining,
+                "used": st.session_state.used,
+                "custom": st.session_state.custom
+            }, st.session_state.sha)
+            if success:
+                st.session_state.sha = new_sha
+        else:
+            st.error(f"Le numéro {num} n'est pas dans les moves utilisés.")
+    else:
+        st.error("Merci d'entrer un numéro valide.")

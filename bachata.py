@@ -66,7 +66,7 @@ def save_github_file(data, sha=None):
     response = requests.put(url, headers=headers, json=payload)
 
     # Afficher en permanence la réponse GitHub
-    with st.expander("🛠️ Détails de l'erreur GitHub"):
+    with st.expander("🛠️ Détails"):
         st.write("Statut :", response.status_code)
         st.write("Réponse :", response.json())
 

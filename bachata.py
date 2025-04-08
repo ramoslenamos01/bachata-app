@@ -114,7 +114,7 @@ with col2:
         else:
             st.error("Erreur lors de la réinitialisation sur GitHub.")
 
-# Ajout et suppression manuels
+# Gestion manuelle
 st.markdown("---")
 st.markdown("### 🛠️ Gestion manuelle")
 num_to_add = st.text_input("Ajouter un numéro ou une vidéo (Instagram)")
@@ -132,13 +132,17 @@ if st.button("➕ Ajouter"):
             st.success("Lien Instagram ajouté aux moves personnalisés.")
         else:
             st.warning("Lien déjà ajouté.")
-    save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+    success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+    if success:
+        st.session_state.sha = new_sha
 
 num_to_remove = st.text_input("Supprimer un numéro")
 if st.button("➖ Supprimer"):
     if num_to_remove.isdigit() and int(num_to_remove) in st.session_state.remaining:
         st.session_state.remaining.remove(int(num_to_remove))
         st.success(f"Numéro {num_to_remove} supprimé.")
-        save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+        success, new_sha = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used, "custom": st.session_state.custom}, st.session_state.sha)
+        if success:
+            st.session_state.sha = new_sha
     else:
         st.error("Numéro non trouvé dans la liste principale.")

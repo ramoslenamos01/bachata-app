@@ -1,74 +1,79 @@
 import streamlit as st
 import random
 import json
-import os
-import glob
 import re
+import requests
+import base64
 
-# ⚙️ Paramètres de l'app
+# ⚙️ Paramètres
 MAX_MOVES = 62
 MOVES_PER_PICK = 3
 
-# 📦 Utilisateur actuel (entrée en haut de page)
 st.set_page_config(page_title="Bachata Moves Picker", layout="centered")
 st.markdown("## 💃 Bachata Moves Picker")
 
-BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste","zaml"]
+BANNED_WORDS = ["putain", "merde", "fuck", "shit", "salope", "connard", "enculé", "fdp", "ntm", "nique", "raciste", "zaml"]
 
-# Nettoyage du nom
 username = st.text_input("Entre ton prénom :").strip().lower()
 
-# Vérification du pseudo
 if any(bad_word in username for bad_word in BANNED_WORDS):
     st.error("⛔ Pseudo inapproprié. Merci de rester respectueux.")
     st.stop()
 
-# Filtrage des caractères spéciaux
-if not re.match(r"^[a-zA-Z0-9_\-]{2,20}$", username):
+if not re.match(r"^[a-zA-Z0-9_-]{2,20}$", username):
     st.warning("⛔ Ton pseudo doit faire 2 à 20 caractères valides (lettres, chiffres, _ ou -).")
     st.stop()
-# Ne rien afficher tant qu’un nom n’est pas entré
+
 if not username:
     st.warning("➡️ Entrez votre nom ci-dessus pour commencer.")
     st.stop()
 
-# 🔐 Fichier spécifique à l'utilisateur
-SAVE_FILE = f"moves_{username.lower().strip()}.json"
+# GitHub setup
+TOKEN = st.secrets["github"]["token"]
+REPO = st.secrets["github"]["repo"]
+BRANCH = st.secrets["github"]["branch"]
+FILEPATH = f"data/moves_{username}.json"
 
-# 💾 Chargement/sauvegarde des données
-def load_data():
-    if os.path.exists(SAVE_FILE):
-        with open(SAVE_FILE, "r") as f:
-            data = json.load(f)
-            return data.get("remaining", list(range(1, MAX_MOVES + 1))), data.get("used", [])
+headers = {'Authorization': f'token {TOKEN}'}
+
+# Functions for GitHub
+def load_github_file():
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILEPATH}?ref={BRANCH}"
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        content = response.json()
+        data = json.loads(base64.b64decode(content["content"]).decode())
+        return data, content["sha"]
     else:
-        return list(range(1, MAX_MOVES + 1)), []
+        return {"remaining": list(range(1, MAX_MOVES + 1)), "used": []}, None
 
-def save_data(remaining, used):
-    with open(SAVE_FILE, "w") as f:
-        json.dump({"remaining": remaining, "used": used}, f)
 
-# 📥 Charger dans session_state
-if "remaining" not in st.session_state or "used" not in st.session_state or st.session_state.get("user") != username:
-    remaining, used = load_data()
-    st.session_state.remaining = remaining
-    st.session_state.used = used
+def save_github_file(data, sha=None):
+    url = f"https://api.github.com/repos/{REPO}/contents/{FILEPATH}"
+    encoded_data = base64.b64encode(json.dumps(data).encode()).decode()
+
+    commit_message = f"Update moves for {username}"
+
+    payload = {
+        "message": commit_message,
+        "content": encoded_data,
+        "branch": BRANCH,
+        "sha": sha
+    }
+
+    response = requests.put(url, headers=headers, json=payload)
+    return response.status_code == 200 or response.status_code == 201
+
+
+# Load from GitHub
+if "remaining" not in st.session_state or st.session_state.get("user") != username:
+    data, sha = load_github_file()
+    st.session_state.remaining = data["remaining"]
+    st.session_state.used = data["used"]
+    st.session_state.sha = sha
     st.session_state.user = username
 
-# 🎲 Tirage et réinitialisation
 col1, col2 = st.columns(2)
-
-
-
-with st.expander("👥 Utilisateurs enregistrés", expanded=False):
-    user_files = glob.glob("moves_*.json")
-    usernames = [f.replace("moves_", "").replace(".json", "") for f in user_files]
-
-    if usernames:
-        st.write(f"**{len(usernames)} utilisateur(s)** enregistré(s) :")
-        st.code(", ".join(sorted(usernames)))
-    else:
-        st.info("Aucun utilisateur encore enregistré.")
 
 with col1:
     if st.button("🎯 Tirer 3 moves", use_container_width=True):
@@ -79,46 +84,27 @@ with col1:
             for num in selected:
                 st.session_state.remaining.remove(num)
                 st.session_state.used.append(num)
-            st.success(f"Moves à pratiquer : {sorted(selected)}")
-            save_data(st.session_state.remaining, st.session_state.used)
+            success = save_github_file({"remaining": st.session_state.remaining, "used": st.session_state.used}, st.session_state.sha)
+            if success:
+                st.success(f"Moves à pratiquer : {sorted(selected)}")
+            else:
+                st.error("Erreur lors de la sauvegarde sur GitHub.")
 
 with col2:
     if st.button("🔄 Réinitialiser", use_container_width=True):
         st.session_state.remaining = list(range(1, MAX_MOVES + 1))
         st.session_state.used = []
-        save_data(st.session_state.remaining, st.session_state.used)
-        st.info("Liste réinitialisée pour " + username)
+        success = save_github_file({"remaining": st.session_state.remaining, "used": []}, st.session_state.sha)
+        if success:
+            st.info("Liste réinitialisée pour " + username)
+        else:
+            st.error("Erreur lors de la réinitialisation sur GitHub.")
 
-# ✅ Moves restants
+# Affichage restants et utilisés
 with st.expander("📋 Moves restants", expanded=True):
     st.write(f"**{len(st.session_state.remaining)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.remaining)) or "Aucun")
+    st.code(", ".join(str(n) for n in sorted(st.session_state.remaining)))
 
-# 🔁 Moves déjà pratiqués
 with st.expander("🧠 Moves déjà pratiqués", expanded=True):
     st.write(f"**{len(st.session_state.used)} moves**")
-    st.code(", ".join(str(n) for n in sorted(st.session_state.used)) or "Aucun")
-
-st.markdown("---")
-
-with st.expander("👮 Interface Admin"):
-    input_password = st.text_input("Mot de passe admin :", type="password")
-
-    # ✅ Comparaison avec le mot de passe stocké dans les secrets
-    if "general" in st.secrets and input_password == st.secrets["general"]["admin_password"]:
-        st.success("Accès admin validé ✅")
-
-        user_files = glob.glob("moves_*.json")
-        usernames = [f.replace("moves_", "").replace(".json", "") for f in user_files]
-
-        st.write(f"Utilisateurs enregistrés : {len(usernames)}")
-        selected_user = st.selectbox("Sélectionner un utilisateur à supprimer", usernames)
-
-        if st.button("❌ Supprimer ce fichier utilisateur"):
-            try:
-                os.remove(f"moves_{selected_user}.json")
-                st.success(f"Fichier de {selected_user} supprimé.")
-            except Exception as e:
-                st.error(f"Erreur lors de la suppression : {e}")
-    elif input_password != "":
-        st.error("Mot de passe incorrect.")
+    st.code(", ".join(str(n) for n in sorted(st.session_state.used)))
